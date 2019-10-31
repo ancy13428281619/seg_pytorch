@@ -1,0 +1,29 @@
+Misc:
+  GpuId: 0
+  OutputFolderName: 'df1b'
+  BestModelName: 'model_seg.pth'
+
+Model:
+  Encoder: 'se_resnext50_32x4d'
+  EncoderWeights: 'imagenet'
+  Activation: 'sigmoid'
+  NumClass: 2
+  IsResume: False
+  OutputFreq: 5
+
+
+Dataset:
+  TrainPath: '/home/ancy/Desktop/seg/train/'
+  TestPath: '/home/ancy/Desktop/seg/train/'
+  BatchSize: 32
+  NumWorkers: 4
+  Epochs: 100
+
+Solver:
+  OptimName: 'sgd'
+  BaseLR: 0.05
+  WeightDecay: 0.0005
+  BiasLRFactor: 2
+  WeightDecayBias: 0.0
+  WarnupIters: 500
+  SchedulerModel: 'poly'
