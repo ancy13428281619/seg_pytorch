@@ -13,9 +13,11 @@ from torchvision import transforms as tf
 from datalayer.datalayer import Datalayer
 from model import getModels
 from loss import getLossFuns
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 from solver.lr_scheduler import GeneralLR_Scheduler
 from solver.make_optimizer import make_optimizer
+from datalayer.augmentations import get_training_augmentation
+import segmentation_models_pytorch as smp
 
 
 class Trainer(object):
@@ -30,60 +32,33 @@ class Trainer(object):
             raise IOError('请输入训练结果保存路径...')
         # gpu使用
         self.device = utils.set_gpu(self.config)
-        self.summaryWriter = SummaryWriter(log_dir=self.output_model_path)
+        # self.summaryWriter = SummaryWriter(log_dir=self.output_model_path)
 
         # logger日志
         setup_logger(self.output_model_path)
         self.logger = get_logger()
 
-    def train_one_epoch(self, model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq):
-        model.train()
-        one_epoch_loss = 0
-        one_epoch_acc = 0
-        for i, (image, target) in enumerate(data_loader):
-
-            image = image.to(device)
-            target = target.to(device).long()
-            pred = model(image)
-            loss = criterion(pred, target)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            lr_scheduler.step()
-            acc = utils.accuracy(pred, target, topk=(1,))
-            grid = torchvision.utils.make_grid(image, normalize=True, scale_each=True, padding=0)
-
-            one_epoch_loss += loss
-            one_epoch_acc += acc[0]
-            if i % print_freq == 0:
-                self.logger.debug('{0}({1}) - loss: {2:.6f} -lr:{3:.6f} - acc{4: .6f}'.format(i, epoch + 1,
-                                                                                              loss.item(),
-                                                                                              optimizer.param_groups[0][
-                                                                                                  "lr"], acc[0]))
-                self.summaryWriter.add_image('images', grid, len(data_loader) * epoch + i)
-                self.summaryWriter.add_scalar('loss', loss, len(data_loader) * epoch + i)
-                self.summaryWriter.add_scalar('acc', acc[0], len(data_loader) * epoch + i)
-                self.summaryWriter.add_scalar('lr', optimizer.param_groups[0]["lr"], len(data_loader) * epoch + i)
-
-        self.logger.debug(
-            'Epoch{} finished ! mean loss: {}, mean acc: {}'.format(epoch, one_epoch_loss / len(data_loader),
-                                                                    one_epoch_acc / len(data_loader)))
-
     def run(self):
 
-        dataset = Datalayer(self.config, transform=tf.Compose([tf.ToTensor(), ]))
+        # 创建模型
+        model, preprocessing_fn = getModels(self.config)
+        model = model.to(self.device)
+        # 加载数据
+        dataset = Datalayer(self.config, get_training_augmentation(), transform=tf.Compose([tf.ToTensor(), ]),
+                            target_transform=tf.Compose([tf.ToTensor(), ]))
         data_loader = DataLoader(dataset=dataset,
                                  shuffle=True,
                                  batch_size=self.config['Dataset']['BatchSize'],
                                  num_workers=self.config['Dataset']['NumWorkers'],
                                  pin_memory=True)
-        # 创建模型
-        model = getModels(self.config['Model']['Name'], num_classes=self.config['Model']['NumClass'],
-                          pretrained=self.config['Model']['IsPretrained']).to(self.device)
         # 创建损失函数
-        criterion = getLossFuns()
+        criterion = getLossFuns(self.config)
         # 创建优化器
         optimizer = make_optimizer(cfg=self.config, model=model)
+        metrics = [
+            smp.utils.metrics.IoUMetric(eps=1.),
+            smp.utils.metrics.FscoreMetric(eps=1.),
+        ]
         lr_scheduler = GeneralLR_Scheduler(optimizer, self.config,
                                            max_iter=len(data_loader) * self.config['Dataset']['Epochs'])
         start_epoch = 0
@@ -95,12 +70,30 @@ class Trainer(object):
             optimizer.load_state_dict(checkpoint['optimizer'])
             lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
             start_epoch = checkpoint['epoch'] + 1
+
+        train_epoch = smp.utils.train.TrainEpoch(
+            model,
+            loss=criterion,
+            metrics=metrics,
+            optimizer=optimizer,
+            device=self.device,
+            verbose=True,
+        )
         # 开始训练
         print("Start training")
         for epoch in range(start_epoch, self.config['Dataset']['Epochs']):
 
-            self.train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, self.device, epoch,
-                                 print_freq=10)
+            print('\nEpoch: {}'.format(epoch))
+            train_logs = train_epoch.run(data_loader)
+
+            # do something (save model, change lr, etc.)
+
+            # if epoch % 10 == 0:
+
+            # self.summaryWriter.add_image('images', grid, len(data_loader) * epoch + i)
+            # self.summaryWriter.add_scalar('loss', train_epoch.loss, len(data_loader) * epoch + i)
+            # self.summaryWriter.add_scalar('acc', acc[0], len(data_loader) * epoch + i)
+            # self.summaryWriter.add_scalar('lr', optimizer.param_groups[0]["lr"], len(data_loader) * epoch + i)
 
             if self.output_model_path:
                 checkpoint = {

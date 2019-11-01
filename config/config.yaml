@@ -4,19 +4,20 @@ Misc:
   BestModelName: 'model_seg.pth'
 
 Model:
-  Encoder: 'se_resnext50_32x4d'
+  Name: 'unet'
+  Encoder: 'resnet18'
   EncoderWeights: 'imagenet'
   Activation: 'sigmoid'
-  NumClass: 2
+  NumClass: 1
   IsResume: False
   OutputFreq: 5
 
 
 Dataset:
-  TrainPath: '/home/ancy/Desktop/seg/train/'
-  TestPath: '/home/ancy/Desktop/seg/train/'
-  BatchSize: 32
-  NumWorkers: 4
+  TrainPath: '/home/pi/Desktop/df1b_dataset/20191017/train/'
+  TestPath: '/home/pi/Desktop/df1b_dataset/20191017/train/'
+  BatchSize: 2
+  NumWorkers: 1
   Epochs: 100
 
 Solver:
@@ -27,3 +28,4 @@ Solver:
   WeightDecayBias: 0.0
   WarnupIters: 500
   SchedulerModel: 'poly'
+  LossName: 'bcedice'

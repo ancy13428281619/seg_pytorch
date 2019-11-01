@@ -1,7 +1,8 @@
 import segmentation_models_pytorch.utils.losses as losses
 
 
-def getLossFuns(loss_name):
+def getLossFuns(cfg):
+    loss_name = cfg['Solver']['LossName']
     if loss_name.lower() == 'bcedice':
         return losses.BCEDiceLoss(eps=1.)
     elif loss_name.lower() == 'bceJaccard':
