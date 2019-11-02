@@ -1,4 +1,8 @@
-import segmentation_models_pytorch as smp
+from .unet import Unet
+from .linknet import Linknet
+from .fpn import FPN
+from .pspnet import PSPNet
+from . import encoders
 
 
 def getModels(cfg):
@@ -9,17 +13,17 @@ def getModels(cfg):
     activation = cfg['Model']['Activation']
 
     if net_name.lower() == 'unet':
-        net = smp.Unet
+        net = Unet
     elif net_name.lower() == 'fpn':
-        net = smp.FPN
+        net = FPN
     elif net_name.lower() == 'linknet':
-        net = smp.Linknet
+        net = Linknet
     elif net_name.lower() == 'pspnet':
-        net = smp.PSPNet
+        net = PSPNet
     else:
         raise ImportError
 
-    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder_name, encoder_weights)
+    preprocessing_fn = encoders.get_preprocessing_fn(encoder_name, encoder_weights)
     return net(encoder_name=encoder_name,
                encoder_weights=encoder_weights,
                classes=classes,

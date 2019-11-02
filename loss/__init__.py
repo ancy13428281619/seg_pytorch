@@ -1,4 +1,4 @@
-import segmentation_models_pytorch.utils.losses as losses
+import loss.losses as losses
 
 
 def getLossFuns(cfg):

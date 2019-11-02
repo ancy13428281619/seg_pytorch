@@ -2,6 +2,7 @@ Misc:
   GpuId: 0
   OutputFolderName: 'df1b'
   BestModelName: 'model_seg.pth'
+  StoreWeightNum: 5
 
 Model:
   Name: 'unet'
@@ -14,13 +15,14 @@ Model:
 
 
 Dataset:
-  TrainPath: '/home/pi/Desktop/df1b_dataset/20191017/train/'
-  TestPath: '/home/pi/Desktop/df1b_dataset/20191017/train/'
+  TrainPath: '/home/ancy/Desktop/seg/train/'
+  TestPath: '/home/ancy/Desktop/seg/train/'
   BatchSize: 2
   NumWorkers: 1
   Epochs: 100
 
 Solver:
+  LossName: 'bcedice'
   OptimName: 'sgd'
   BaseLR: 0.05
   WeightDecay: 0.0005
@@ -28,4 +30,4 @@ Solver:
   WeightDecayBias: 0.0
   WarnupIters: 500
   SchedulerModel: 'poly'
-  LossName: 'bcedice'
+

@@ -3,8 +3,8 @@ import os
 import sys
 
 
-def setup_logger(save_dir, filename="log.txt"):
-    logger = logging.getLogger('logger')  # 必须每次都是一样，否则其他文件getLogger时候不是同一个对象
+def setup_logger(save_dir, filename="log.txt", logger_name='logger'):
+    logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler(stream=sys.stdout)
     ch.setLevel(logging.DEBUG)
@@ -19,7 +19,3 @@ def setup_logger(save_dir, filename="log.txt"):
         logger.addHandler(fh)
 
     return logger
-
-
-def get_logger():
-    return logging.getLogger('logger')

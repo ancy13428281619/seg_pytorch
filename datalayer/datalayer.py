@@ -1,13 +1,7 @@
 import os
 import cv2
 import numpy as np
-import torch
-import torch.utils.data
-import torchvision
-from torchvision import transforms
-from utils.utils import loadYaml
 from .base_datalayer import BaseDataLayer
-import albumentations as albu
 
 
 class Datalayer(BaseDataLayer):
@@ -48,7 +42,6 @@ class Datalayer(BaseDataLayer):
             random_id_ng = item % len(self.ng_imgs_path)
             img_path, mask_path = self.ng_imgs_path[random_id_ng], self.ng_masks_path[random_id_ng]
 
-        print(img_path)
         img = cv2.imread(img_path)
 
         mask = cv2.imread(mask_path, 0) if mask_path else np.zeros_like(img, dtype=np.uint8)[..., 0]
